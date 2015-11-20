@@ -1,0 +1,27 @@
+{
+  "name": "Digraphs",
+  "version": "0.1",
+  "manifest_version": 2,
+  "description": "This addon brings the Vim digraphs to Chrome.",
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "exclude_matches": [ "*://*.google.com/*" ],
+      "js": ["content.js"],
+      "all_frames": true
+    }
+  ],
+  "commands": {
+    "enter-digraph": {
+      "suggested_key": {
+        "default": "Ctrl+K"
+      },
+      "description": "Enter digraph"
+    }
+  }
+}

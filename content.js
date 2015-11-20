@@ -457,36 +457,35 @@ var Digraphs = new function() {
   };
 
   var that = this;
-  var loglevel = 0;
-  var prefs = Components.classes["@mozilla.org/preferences-service;1"]
-                        .getService(Components.interfaces.nsIPrefService)
-                        .getBranch("extensions.digraphs.");
-  var my_rfc1345 = rfc1345;
-  if (prefs) {
-    var list = prefs.getChildList("custom.", {});
-    for (var i = 0; i < list.length; i++) {
-      my_rfc1345[list[i].substring(7)] = String.fromCharCode(prefs.getIntPref(list[i]));
+  that.di = null;
+
+  chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+      if (request == "enter-digraph") {
+        that.di = "";
+      }
+    });
+
+  // Unlike Firefox, we can't just simulate a keypress when it comes to text
+  // fields, so we have to manually modify the value.
+  function insertAtCursor(el, chr) {
+    if (el.selectionStart || el.selectionStart == '0') {
+      var startPos = el.selectionStart;
+      var endPos = el.selectionEnd;
+      el.value = el.value.substring(0, startPos)
+        + chr
+        + el.value.substring(endPos, el.value.length);
+      el.selectionEnd = el.selectionStart = startPos + chr.length;
+    } else {
+      el.value += chr;
     }
   }
-
-  function log(message) {
-    if (loglevel > 0) {
-      Components.classes["@mozilla.org/consoleservice;1"]
-                .getService(Components.interfaces.nsIConsoleService)
-                .logStringMessage(message + "\n");
-    }
-  };
 
   /**
    * Fake a key event
    */
   function fakeKey(event, chr) {
-    var new_event = document.createEvent("KeyEvents");
-    new_event.initKeyEvent("keypress", true, true, event.view, 
-                            false, false, false, false, 
-                            0, chr.charCodeAt(0));
-    new_event.digraph_pass = true;
-    event.target.dispatchEvent(new_event);
+    // TODO
   };
 
   /**
@@ -495,13 +494,11 @@ var Digraphs = new function() {
    * Returns the last entered character, if none was found
    */
   function get_digraph(di) {
-    if (di in my_rfc1345) {
-      log(di+": "+my_rfc1345[di]);
-      return my_rfc1345[di];
-    } else if (di.length === 2 && ! may_be_digraph(di) && (di[1]+di[0] in my_rfc1345)) {
+    if (di in rfc1345) {
+      return rfc1345[di];
+    } else if (di.length === 2 && ! may_be_digraph(di) && (di[1]+di[0] in rfc1345)) {
       // detect inverse digraphs
-      log(di+" (I): "+my_rfc1345[di[1]+di[0]]);
-      return my_rfc1345[di[1]+di[0]];
+      return rfc1345[di[1]+di[0]];
     }
     return null;
   };
@@ -511,7 +508,7 @@ var Digraphs = new function() {
    */
   function may_be_digraph(di) {
     var k;
-    for (k in my_rfc1345) {
+    for (k in rfc1345) {
       if (k.length >= di.length && k.substring(0, di.length) == di) {
         return true;
       }
@@ -537,26 +534,27 @@ var Digraphs = new function() {
         return true;
       }
       that.di += c;
-      log(that.di);
       if (that.di.length > 1) {
         var id = get_digraph(that.di), maybe = false;
         if (id == null) {
           maybe = may_be_digraph(that.di);
           if (! maybe) {
             // end digraph finding, if it's none for sure
-            fakeKey(event, that.di.substring(that.di.length - 1));
+            var chr = that.di.substring(that.di.length - 1);
+            fakeKey(event, chr);
+            insertAtCursor(event.target, chr);
             that.di = null;
           }
         } else {
           fakeKey(event, id);
+          insertAtCursor(event.target, id);
           that.di = null;
         }
       }
       event.preventDefault();
       event.stopPropagation();
       return false;
-    } else if (event[prefs.getCharPref("activate_mod")] &&
-               event.which == prefs.getIntPref("activate_key") /*k*/) {
+    } else if (event.ctrlKey && event.which == "k") {
       that.di = "";
       event.preventDefault();
       event.stopPropagation();
@@ -567,14 +565,13 @@ var Digraphs = new function() {
     }
   };
 
-  this.di = null;
   this.init = function(event) {
-      if (window) {
-          window.addEventListener('keypress', keyPressHandler, false);
-      }
+    window.addEventListener('keypress', keyPressHandler, false);
   };
 };
 
-if (window) {
-    window.addEventListener("load", Digraphs.init, false);
-}
+if (document.readyState == "complete") {
+  Digraphs.init();
+} else {
+  window.addEventListener("load", Digraphs.init, false);
+};

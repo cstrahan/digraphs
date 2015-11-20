@@ -1,28 +1,9 @@
                                D I G R A P H S
-                             Digraphs for Firefox
+                             Digraphs for Chrome
                              (as known from Vim)
 
 
-This addon brings the Vim digraphs to Firefox. After installation, you can use
+This addon brings the Vim digraphs to Chrome. After installation, you can use
 Ctrl-K and a two-letter mnemonic to input many common Unicode characters.
 
 For a detailed overview, see RFC 1345 <http://tools.ietf.org/html/rfc1345>.
-This document lists all known digraphs except for "Eu"/"=e" for the Euro
-currency symbol (U+20AC).
-
-
-I S S U E S :
-
-* No user configuration at the moment
-
-* Only two-letter digraphs are recognized at the moment. The RFC also defines
-  single- and multi-character mnemonics.
-
-
-I N S T A L A T I O N :
-
-* Manually: Create a text file named "digraphs@boldewyn.de" in your Firefox
-  profile’s "extension" folder. Its content is the absolute path to the
-  digraphs@boldeyn.de folder (including the final slash). Restart Firefox.
-
-* Automatically: Install from https://addons.mozilla.org/firefox/addon/261969/ (needs yet to leave the sandbox)
